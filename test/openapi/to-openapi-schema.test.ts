@@ -1071,6 +1071,40 @@ describe('OpenAPI > toOpenAPISchema', () => {
 		})
 	})
 
+	it('keep detail responses with response schema', () => {
+		const detail = {
+			responses: {
+				400: { description: 'From detail, overridden' },
+				423: { description: 'Locked' }
+			}
+		}
+
+		const app = new Elysia().get('/user', {
+			detail,
+			response: {
+				200: t.String(),
+				400: t.Object(
+					{ message: t.String() },
+					{ description: 'From schema' }
+				)
+			}
+		}, () => 'hello')
+
+		const { responses } = toOpenAPISchema(app).paths['/user']!.get!
+
+		expect(Object.keys(responses!)).toEqual(['200', '400', '423'])
+		expect(responses![423]).toEqual({ description: 'Locked' })
+		expect((responses![400] as any).description).toBe('From schema')
+
+		// `detail` may be shared between routes, it must stay untouched
+		expect(detail).toEqual({
+			responses: {
+				400: { description: 'From detail, overridden' },
+				423: { description: 'Locked' }
+			}
+		})
+	})
+
 	it('inherits tags from constructor', () => {
 		const app = new Elysia({ tags: ['User'] }).use(
 			new Elysia().get('/user', () => 'hello')
