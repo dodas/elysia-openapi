@@ -1474,7 +1474,8 @@ export function toOpenAPISchema(
 
 		// Handle responses
 		if (hooks.response) {
-			operation.responses = {}
+			// keep `detail.responses`, response schema wins on the same status
+			operation.responses = { ...operation.responses }
 
 			if (
 				typeof hooks.response === 'object' &&
